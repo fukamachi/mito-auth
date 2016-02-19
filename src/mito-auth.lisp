@@ -17,7 +17,7 @@
   ((password-hash :col-type (:char 64)
                   :initarg :password-hash
                   :reader password-hash)
-   (password-salt :col-type :bytea
+   (password-salt :col-type (:binary 20)
                   :initarg :password-salt
                   :initform (make-random-salt 20)
                   :reader password-salt))
