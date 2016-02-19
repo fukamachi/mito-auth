@@ -9,6 +9,7 @@
   (:import-from #:babel
                 #:string-to-octets)
   (:export #:auth
+           #:password
            #:password-hash
            #:password-salt))
 (in-package :mito-auth)
