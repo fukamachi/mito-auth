@@ -7,9 +7,9 @@ Mito-auth provides a Mito mixin class for user authorization.
 ```common-lisp
 (use-package :mito-auth)
 
-;; Inherit mito-auth:auth.
+;; Inherit mito-auth:has-secure-password.
 ;; It adds password_hath and password_salt.
-(defclass user (auth)
+(defclass user (has-secure-password)
   ((name :col-type (:varchar 60)
          :initarg :name
          :accessor user-name)

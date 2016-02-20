@@ -8,13 +8,14 @@
                 #:make-random-salt)
   (:import-from #:babel
                 #:string-to-octets)
-  (:export #:auth
+  (:export #:has-secure-password
+           #:auth
            #:password
            #:password-hash
            #:password-salt))
 (in-package :mito-auth)
 
-(defclass auth ()
+(defclass has-secure-password ()
   ((password-hash :col-type (:char 64)
                   :initarg :password-hash
                   :reader password-hash)
@@ -33,17 +34,17 @@
                  salt))))
 
 (defgeneric (setf password) (password auth)
-  (:method (password (auth auth))
+  (:method (password (object has-secure-password))
     (let ((password-hash
             (make-password-hash password
-                                (slot-value auth 'password-salt))))
-      (setf (slot-value auth 'password-hash) password-hash))))
+                                (slot-value object 'password-salt))))
+      (setf (slot-value object 'password-hash) password-hash))))
 
-(defmethod initialize-instance :after ((auth auth) &rest initargs
+(defmethod initialize-instance :after ((object has-secure-password) &rest initargs
                                        &key password &allow-other-keys)
   (declare (ignore initargs))
   (when password
-    (setf (password auth) password)))
+    (setf (password object) password)))
 
 (defun auth (object password)
   (string= (password-hash object)
