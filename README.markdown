@@ -8,7 +8,7 @@ Mito-auth provides a Mito mixin class for user authorization.
 (use-package :mito-auth)
 
 ;; Inherit mito-auth:has-secure-password.
-;; It adds password_hath and password_salt.
+;; It adds password_hash and password_salt.
 (defclass user (has-secure-password)
   ((name :col-type (:varchar 60)
          :initarg :name
@@ -22,7 +22,7 @@ Mito-auth provides a Mito mixin class for user authorization.
 (mito:connect-toplevel :sqlite3 :database-name #P"/tmp/mito-auth.db")
 
 ;; Enable logging
-(setf (mito:logger-stream) t)
+(setf mito:*mito-logger-stream* t)
 
 ;; Ensure the table "user" exists
 (mito:ensure-table-exists 'user)
