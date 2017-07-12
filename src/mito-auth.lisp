@@ -5,6 +5,8 @@
   (:import-from #:ironclad
                 #:byte-array-to-hex-string
                 #:digest-sequence
+                #:*prng*
+                #:make-prng
                 #:make-random-salt)
   (:import-from #:babel
                 #:string-to-octets)
@@ -21,7 +23,10 @@
                   :reader password-hash)
    (password-salt :col-type (:binary 20)
                   :initarg :password-salt
-                  :initform (make-random-salt 20)
+                  :initform
+                  ;; Use /dev/urandom seed for portability.
+                  (let ((*prng* (make-prng :fortuna :seed :urandom)))
+                    (make-random-salt 20))
                   :reader password-salt))
   (:metaclass mito:dao-table-mixin))
 
