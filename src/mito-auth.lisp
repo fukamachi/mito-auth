@@ -5,6 +5,7 @@
   (:import-from #:ironclad
                 #:byte-array-to-hex-string
                 #:digest-sequence
+                #:hex-string-to-byte-array
                 #:*prng*
                 #:make-prng
                 #:make-random-salt)
@@ -21,7 +22,7 @@
   ((password-hash :col-type (:char 64)
                   :initarg :password-hash
                   :reader password-hash)
-   (password-salt :col-type (:binary 20)
+   (password-salt :col-type (:char 64)
                   :initarg :password-salt
                   :initform
                   ;; Use /dev/urandom seed for portability.
@@ -31,19 +32,20 @@
   (:metaclass mito:dao-table-mixin))
 
 (defun make-password-hash (password salt)
-  (ironclad:byte-array-to-hex-string
+  (byte-array-to-hex-string
    (digest-sequence
     :sha256
     (concatenate '(vector (unsigned-byte 8))
                  (babel:string-to-octets password)
-                 salt))))
+                 (if (stringp salt)
+                     (hex-string-to-byte-array salt)
+                     salt)))))
 
 (defgeneric (setf password) (password auth)
   (:method (password (object has-secure-password))
-    (let ((password-hash
-            (make-password-hash password
-                                (slot-value object 'password-salt))))
-      (setf (slot-value object 'password-hash) password-hash))))
+    (let ((salt-bytes (make-random-salt 20)))
+      (setf (slot-value object 'password-salt) (byte-array-to-hex-string salt-bytes))
+      (setf (slot-value object 'password-hash) (make-password-hash password salt-bytes)))))
 
 (defmethod initialize-instance :after ((object has-secure-password) &rest initargs
                                        &key password &allow-other-keys)
