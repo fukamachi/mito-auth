@@ -50,6 +50,11 @@ Mito-auth provides a Mito mixin class for user authorization.
 
 (auth *user* "wrong-password")
 ;=> NIL
+
+;; To change the password do
+(setf (password *user*) “new-password”)
+;; Then on `mito:save-dao` it will take care of the hashing.
+(mito:save-dao *user*)
 ```
 
 ## Installation
