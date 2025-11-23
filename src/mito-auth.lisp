@@ -18,6 +18,22 @@
            #:password-salt))
 (in-package :mito-auth)
 
+;; from cl-str
+(defvar *whitespaces* (list #\Backspace #\Tab #\Linefeed #\Newline #\Vt #\Page
+                            #\Return #\Space #\Rubout
+                            #+sbcl #\Next-Line #-sbcl (code-char 133)
+                            #+(or abcl gcl lispworks ccl) (code-char 12288) #-(or abcl gcl lispworks ccl) #\Ideographic_space
+                            #+lispworks #\no-break-space #-lispworks #\No-break_space)
+  "On some implementations, linefeed and newline represent the same character (code).")
+
+(defun trim (s &key (char-bag *whitespaces*))
+  "Removes all characters in `char-bag` (default: whitespaces) at the beginning and end of `s`.
+   If supplied, char-bag has to be a sequence (e.g. string or list of characters).
+
+   Examples: (trim \"  foo \") => \"foo\""
+  (when s
+    (string-trim char-bag s)))
+
 (defclass has-secure-password ()
   ((password-hash :col-type (:char 64)
                   :initarg :password-hash
@@ -53,7 +69,13 @@
   (when password
     (setf (password object) password)))
 
+(defun normalize-password-salt (password-salt)
+  (let ((trimmed-password-salt (trim password-salt)))
+    (if (uiop:string-prefix-p "\\x" trimmed-password-salt)
+        (subseq trimmed-password-salt 2)
+        trimmed-password-salt)))
+
 (defun auth (object password)
   (string= (password-hash object)
            (make-password-hash password
-                               (password-salt object))))
+                               (normalize-password-salt (password-salt object)))))
