@@ -63,6 +63,11 @@ Mito-auth provides a Mito mixin class for user authorization.
 (ql:quickload :mito-auth)
 ```
 
+## CHANGELOG
+
+- Nov, 2025: added normalize-pasword-salt to fix Postgres issues.
+- Apr 23, 2025: breaking change: switched salt to char 64 instead of binary 20.
+
 ## See Also
 
 * [Mito](https://github.com/fukamachi/mito)
