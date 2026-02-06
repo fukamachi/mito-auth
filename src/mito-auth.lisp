@@ -18,13 +18,11 @@
            #:password-salt))
 (in-package :mito-auth)
 
-;; from cl-str
 (defvar *whitespaces* (list #\Backspace #\Tab #\Linefeed #\Newline #\Vt #\Page
                             #\Return #\Space #\Rubout
-                            #+sbcl #\Next-Line #-sbcl (code-char 133)
-                            #+(or abcl gcl lispworks ccl) (code-char 12288) #-(or abcl gcl lispworks ccl) #\Ideographic_space
-                            #+lispworks #\no-break-space #-lispworks #\No-break_space)
-  "On some implementations, linefeed and newline represent the same character (code).")
+                            (code-char 133)      ;; #\Next-Line
+                            (code-char 160)      ;; #\No-break_space
+                            (code-char 12288)))  ;; #\Ideographic_space
 
 (defun trim (s &key (char-bag *whitespaces*))
   "Removes all characters in `char-bag` (default: whitespaces) at the beginning and end of `s`.
@@ -47,15 +45,26 @@
                   :reader password-salt))
   (:metaclass mito:dao-table-mixin))
 
+(defun salt-to-bytes (salt)
+  "Convert salt from any DB-returned format to a byte array.
+Handles: byte vectors (as-is), hex strings (with optional \\x prefix and whitespace padding)."
+  (etypecase salt
+    ((array (unsigned-byte 8) (*))
+     salt)
+    (string
+     (let ((trimmed (trim salt)))
+       (hex-string-to-byte-array
+        (if (uiop:string-prefix-p "\\x" trimmed)
+            (subseq trimmed 2)
+            trimmed))))))
+
 (defun make-password-hash (password salt)
   (byte-array-to-hex-string
    (digest-sequence
     :sha256
     (concatenate '(vector (unsigned-byte 8))
                  (babel:string-to-octets password)
-                 (if (stringp salt)
-                     (hex-string-to-byte-array salt)
-                     salt)))))
+                 (salt-to-bytes salt)))))
 
 (defgeneric (setf password) (password auth)
   (:method (password (object has-secure-password))
@@ -69,13 +78,6 @@
   (when password
     (setf (password object) password)))
 
-(defun normalize-password-salt (password-salt)
-  (let ((trimmed-password-salt (trim password-salt)))
-    (if (uiop:string-prefix-p "\\x" trimmed-password-salt)
-        (subseq trimmed-password-salt 2)
-        trimmed-password-salt)))
-
 (defun auth (object password)
   (string= (password-hash object)
-           (make-password-hash password
-                               (normalize-password-salt (password-salt object)))))
+           (make-password-hash password (password-salt object))))
